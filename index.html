@@ -145,7 +145,7 @@
             return;
         }
 
-        // Lock UI down momentarily
+        // 1. Instantly transition UI elements to show dispatch state
         btn.disabled = true;
         btn.innerText = 'BROADCASTING PAYLOAD...';
         sysState.innerText = 'FIRING PARENT ROUTER V3...';
@@ -153,20 +153,7 @@
 
         const webhookUrl = 'https://hook.eu1.make.com/41dc03b4fkzu11ggnl1h79vh3y7ai2ds';
 
-        // Fire request without waiting for the response stream to finish
-        fetch(`${webhookUrl}?ticker=${encodeURIComponent(ticker)}`).catch(err => {
-            // Quietly catch background network breaks without crashing the UI
-            console.log('Background pipeline active.');
-        });
-
-        // Instant Handover UI Update
-        btn.innerText = 'ANALYSIS RUNNING IN BACKGROUND';
-        sysState.innerText = 'COMPLETED HANDOVER TO CLOUD';
-        sysState.style.color = '#7ee787';
-        sysPipelines.innerText = '6/6 Engines Active';
-        tickerInput.value = ''; // Clear input immediately
-
-        // Auto-reset back to original state after 1.5 seconds
+        // 2. Schedule the automatic UI reset independently of the network request
         setTimeout(() => {
             btn.disabled = false;
             btn.innerText = 'INITIALIZE 6-ENGINE ANALYSIS';
@@ -174,6 +161,20 @@
             sysState.style.color = '#58a6ff';
             sysPipelines.innerText = '0/6 Deployed';
         }, 1500);
+
+        // 3. Dispatch payload using cross-origin bypass options to prevent browser wait locks
+        fetch(`${webhookUrl}?ticker=${encodeURIComponent(ticker)}`, {
+            method: 'GET',
+            mode: 'no-cors',
+            credentials: 'omit'
+        })
+        .then(() => {
+            tickerInput.value = ''; 
+        })
+        .catch(err => {
+            console.log('Background pipeline triggered.');
+            tickerInput.value = '';
+        });
     }
 </script>
 
